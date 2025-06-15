@@ -23,17 +23,6 @@ class JWTAuthController extends Controller
         $this->user = $user;
     }
 
-    public function authenticatedUser()
-    {
-        try {
-            $user = JWTAuth::parseToken()->authenticate();
-        } catch (JWTException $e) {
-            return response()->json(['error' => 'Não autorizado.'], Response::HTTP_UNAUTHORIZED);
-        }
-
-        return response()->json($user, Response::HTTP_OK);
-    }
-
     public function login(Request $request)
     {
         $credentials = $request->only('email', 'password');
