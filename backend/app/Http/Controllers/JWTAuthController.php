@@ -29,7 +29,7 @@ class JWTAuthController extends Controller
 
         if (!$token = JWTAuth::attempt($credentials)) {
             return response()->json(
-                ['error' => 'Não autorizado.'],
+                ['error' => 'E-mail e/ou senha incorretos.'],
                 Response::HTTP_UNAUTHORIZED
             );
         }
