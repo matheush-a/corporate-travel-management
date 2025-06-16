@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Validator;
 use App\Enum\StatusEnum;
+use App\Notifications\TravelRequestStatusUpdated;
+use Illuminate\Support\Facades\Log;
 
 class TravelRequestController extends Controller
 {
@@ -103,7 +105,16 @@ class TravelRequestController extends Controller
             return response()->json($validator->errors(), Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
-        // TODO: implementar envio de notificação para o usuário solicitante
+        /**
+         * Envio de notificação para o usuário solicitante
+         * OBS: para fins de testes a notificação é registrada apenas em /storage/logs/laravel.log
+         *  */
+        try {
+            Log::info('Enviando notificação para o usuário: ' . $travelRequest->user->email);
+            $travelRequest->user->notify(new TravelRequestStatusUpdated($travelRequest));
+        } catch (\Exception $e) {
+            Log::error('Erro ao enviar notificação: ' . $e->getMessage());
+        }
 
         $travelRequest->status = $request->status;
         $travelRequest->save();
