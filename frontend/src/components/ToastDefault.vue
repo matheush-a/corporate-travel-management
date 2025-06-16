@@ -11,7 +11,7 @@
     >
       <component :is="getIcon()" class="icon" />
       {{ toastState.message }}
-      <closeIcon />
+      <closeIcon @click="close"/>
     </div>
   </div>
 </template>
@@ -65,6 +65,9 @@ export default {
       else if (this.toastState.type === 'error') {
         return errorIcon;
       }
+    },
+    close() {
+      this.toastState.visible = false;
     }
   }
 }
@@ -91,6 +94,7 @@ export default {
   user-select: none;
   position: absolute;
   top: 0;
+  color: var(--white);
 }
 
 .icon {
@@ -101,7 +105,6 @@ export default {
 
 .--success {
   background-color: var(--primary-500);
-
 }
 
 .--warning {

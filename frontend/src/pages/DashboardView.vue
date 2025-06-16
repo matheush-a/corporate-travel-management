@@ -1,18 +1,22 @@
 <template>
   <MainLayout :show-header="true">
     <template v-slot:content>
-      <div class="dashboard-container">
-        <div class="filters">
-          <label for="statusFilter">Filtrar por status:</label>
-          <select id="statusFilter" v-model="selectedStatus" @change="onStatusChange">
-            <option value="">Todos</option>
-            <option v-for="status in statuses" :key="status" :value="status">
-              {{ status }}
-            </option>
-          </select>
+      <div class="dashboard-container" v-if="!creatingNewRequest">
+        <div class="inner-container">
+          <h2>Solicitações de viagem</h2>
+          <div class="row">
+            <div class="filters">
+              <label for="statusFilter">Filtrar por status:</label>
+              <select id="statusFilter" v-model="selectedStatus" @change="onStatusChange">
+                <option value="">Todos</option>
+                <option v-for="status in statuses" :key="status" :value="status">
+                  {{ status }}
+                </option>
+              </select>
+            </div>
+            <button @click="creatingNewRequest = !creatingNewRequest">Criar solicitação</button>
+          </div>
         </div>
-
-        <h2>Solicitações de viagem</h2>
         <table class="table">
           <thead>
             <tr>
@@ -44,6 +48,34 @@
           </tbody>
         </table>
       </div>
+
+      <div class="travel-request-creation" v-else>
+        <h2>Criar Solicitação</h2>
+        <form @submit.prevent="creatingNewRequest = false">
+          <input-component
+            :id="'email'"
+            :label="'Destino'"
+            v-model="formData.destination"
+          />
+          <input-component
+            :id="'email'"
+            :label="'Data de ida'"
+            :type="'date'"
+            v-model="formData.departure_date"
+          />
+          <input-component
+            :id="'email'"
+            :label="'Data de volta'"
+            :type="'date'"
+            v-model="formData.return_date"
+          />
+
+          <div class="cta-wrapper">
+            <button type="button" @click="creatingNewRequest = false">Cancelar</button>
+            <button type="button" @click="createTravelRequest">Salvar Solicitação</button>
+          </div>
+        </form>
+      </div>
     </template>
   </MainLayout>
 </template>
@@ -54,20 +86,50 @@ import MainLayout from '@/layouts/MainLayout.vue'
 import travelRequestsService from '@/api/services/travelRequests.service'
 import toastState from '@/state/toast'
 import loaderState from '@/state/loader'
+import InputComponent from '@/components/InputComponent.vue'
 
 export default defineComponent({
   name: 'DashboardView',
   components: {
     MainLayout,
+    InputComponent
   },
   data() {
     return {
       travelRequests: [],
       selectedStatus: '',
       statuses: ['Solicitado', 'Cancelado', 'Aprovado'],
+      creatingNewRequest: false,
+      formData: {
+        destination: '',
+        departure_date: '',
+        return_date: '',
+      }
     }
   },
   methods: {
+    async createTravelRequest() {
+      try {
+        const { data } = await travelRequestsService.create(this.formData)
+
+        await this.getTravelRequests()
+        this.creatingNewRequest = false
+
+        this.formData = {
+          destination: '',
+          departure_date: '',
+          return_date: '',
+        }
+
+        toastState.show('Solicitação criada com sucesso.', 'success')
+      } catch (error) {
+        const data = error.response?.data;
+
+        const message = Object.entries(data).map(([key, value]) => `${key}: ${value}`).toString() || 'Erro ao criar solicitação.';
+
+        toastState.show(message, 'error')
+      }
+    },
     async getTravelRequests() {
       try {
         loaderState.setIsLoading(true)
@@ -77,7 +139,7 @@ export default defineComponent({
           : ''
 
         const { data } = await travelRequestsService.index(query)
-        
+
         this.travelRequests = data
         loaderState.setIsLoading(false)
       } catch (error) {
@@ -100,9 +162,6 @@ export default defineComponent({
     }
   },
   async mounted() {
-    const token = localStorage.getItem('token')
-    console.log('Token:', token)
-
     await this.getTravelRequests()
   },
 })
@@ -116,13 +175,30 @@ export default defineComponent({
   display: flex;
   flex-direction: column;
   align-items: center;
+
+  .inner-container {
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: column;
+    margin-bottom: 1rem;
+  }
+}
+
+h2 {
+  text-align: center;
+}
+
+.row {
+  display: flex;
+  height: fit-content;
+  margin-bottom: 1.5rem;
+  gap: 3rem;
 }
 
 .filters {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  margin-bottom: 1.5rem;
   font-size: 0.95rem;
   color: #111827;
 
@@ -183,6 +259,38 @@ export default defineComponent({
   display: flex;
   gap: 0.5rem;
 }
+
+.travel-request-creation {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  gap: 1rem;
+
+  form {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 400px;
+    margin: auto;
+    gap: 1rem;
+
+    @media screen and (min-width: 768px) {
+      width: 400px;
+      margin: auto;
+    }
+  }
+  .cta-wrapper {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 1rem;
+  }  
+}
+
 
 @media (prefers-color-scheme: dark) {
   .table {
