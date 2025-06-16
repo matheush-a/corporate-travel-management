@@ -110,7 +110,6 @@ class TravelRequestController extends Controller
          * OBS: para fins de testes a notificação é registrada apenas em /storage/logs/laravel.log
          *  */
         try {
-            Log::info('Enviando notificação para o usuário: ' . $travelRequest->user->email);
             $travelRequest->user->notify(new TravelRequestStatusUpdated($travelRequest));
         } catch (\Exception $e) {
             Log::error('Erro ao enviar notificação: ' . $e->getMessage());
