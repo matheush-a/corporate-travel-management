@@ -7,5 +7,7 @@ until php artisan migrate --force; do
   sleep 3
 done
 
+php artisan jwt:secret
+
 # Serve Laravel
 php artisan serve --host=0.0.0.0 --port=8000
